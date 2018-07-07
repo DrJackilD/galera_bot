@@ -19,11 +19,30 @@ def default_handler(bot, update):
     bot.send_message(update.message.chat_id, f'{update.message.from_user.name} I don\'t know.')
 
 
+def help(bot, update):
+    """
+    Show help message
+    """
+    descriptions = []
+    for cmd, f in cmd_handler.commands.items():
+        doc = f.__doc__.strip() if f.__doc__ else ''
+        descriptions.append(': '.join([cmd, doc]))
+    docs = '\n'.join(descriptions)
+    message = f"Available commands:\n{docs}"
+    bot.send_message(update.message.chat_id, f'{update.message.from_user.name}\n{message}')
+
+
 def pong(bot, update):
+    """
+    Check availability
+    """
     bot.send_message(update.message.chat_id, f'{update.message.from_user.name} pong')
 
 
 def currencies(bot, update):
+    """
+    Get today's currencies
+    """
     curr = '\n'.join(get_currency())
     message = f"{update.message.from_user.name}\nКурсы валют на сегодня (Покупка/Продажа):\n{curr}"
     bot.send_message(update.message.chat_id, message)
@@ -48,5 +67,6 @@ if __name__ == '__main__':
     cmd_handler = BotCommandHandler(default_handler)
     cmd_handler.add_command('ping', pong)
     cmd_handler.add_command('currencies', currencies)
+    cmd_handler.add_command('help', help)
 
     main()
