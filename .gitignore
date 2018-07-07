@@ -1,0 +1,5 @@
+.env
+.idea/
+.vscode/
+creds
+galera_bot.code-workspace
