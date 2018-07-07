@@ -3,3 +3,4 @@
 .vscode/
 creds
 galera_bot.code-workspace
+__pycache__
