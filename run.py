@@ -7,7 +7,7 @@ from telegram.ext import Updater, MessageHandler
 from bot.config import BOT_NAME
 from bot.filters import MentionFilter
 from bot.commands import BotCommandHandler
-from currency_parser import get_currency
+from currency_parser import get_banks_currency, get_market_currencies
 
 logging.basicConfig(format='%(asctime)s %(name)s [%(levelname)s]: %(message)s', level=logging.INFO)
 logger = logging.getLogger('galera_bot.run')
@@ -43,8 +43,11 @@ def currencies(bot, update):
     """
     Get today's currencies
     """
-    curr = '\n'.join(get_currency())
-    message = f"{update.message.from_user.name}\nКурсы валют на сегодня (Покупка/Продажа):\n{curr}"
+    banks = '\n'.join(get_banks_currency())
+    market = '\n'.join(get_market_currencies())
+    message = (f"{update.message.from_user.name}\n"
+               f"Курсы в банках города:\n{banks}\n\n"
+               f"Курсы у независимых продавцов:\n{market}")
     bot.send_message(update.message.chat_id, message)
 
 
