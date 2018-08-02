@@ -39,10 +39,30 @@ def get_market_currencies():
         r = requests.get(url)
         tree = document_fromstring(r.text)
         curr = ' / '.join(
-            map(
-                str.strip,
-                tree.xpath('//div [@class="au-mid-buysell"][small]/text()[normalize-space()]')
-            )
+            map(str.strip,
+                tree.xpath('//div [@class="au-mid-buysell"][small]/text()[normalize-space()]'))
+        )
+        result = f'{title}: {curr}'
+        currencies.append(result)
+    return currencies
+
+
+def get_nbu_currencies():
+    url = 'https://minfin.com.ua/currency/nbu/'
+    target_currencies = [
+        ("ДОЛЛАР", "USD"),
+        ("ЕВРО", "EUR"),
+        ("РУБЛЬ", "Деревянный")
+    ]
+    currencies = []
+
+    r = requests.get(url)
+    tree = document_fromstring(r.text)
+
+    for (el_name, title) in target_currencies:
+        curr = ''.join(
+            map(str.strip,
+                tree.xpath(f'//a [text()="{el_name}"]/../../td[@data-title="Курс НБУ"]/text()[normalize-space()]'))
         )
         result = f'{title}: {curr}'
         currencies.append(result)
