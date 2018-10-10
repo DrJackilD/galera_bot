@@ -1,34 +1,24 @@
-import re
 import logging
 import os
 
-from telegram.ext import Updater, MessageHandler
+import telegram
+from telegram.ext import Updater, CommandHandler
 
-from bot.config import BOT_NAME
-from bot.filters import MentionFilter
-from bot.commands import BotCommandHandler
 from currency_parser import get_banks_currency, get_market_currencies, get_nbu_currencies
+from gas_parser import get_gas_prices
 
 logging.basicConfig(format='%(asctime)s %(name)s [%(levelname)s]: %(message)s', level=logging.INFO)
 logger = logging.getLogger('galera_bot.run')
 
-cmd_pattern = re.compile('@[A-z0-9]+ (\w+)')
 
-
-def default_handler(bot, update):
-    bot.send_message(update.message.chat_id, f'{update.message.from_user.name} I don\'t know.')
-
-
-def help(bot, update):
+def help_(bot, update):
     """
     Show help message
     """
-    descriptions = []
-    for cmd, f in cmd_handler.commands.items():
-        doc = f.__doc__.strip() if f.__doc__ else ''
-        descriptions.append(': '.join([cmd, doc]))
-    docs = '\n'.join(descriptions)
-    message = f"Available commands:\n{docs}"
+    message = ('/баблишко - курсы валют\n'
+               '/бенз - цены на бензин\n'
+               '/ping - пинг\n'
+               '/help - показать помощь')
     bot.send_message(update.message.chat_id, f'{update.message.from_user.name}\n{message}')
 
 
@@ -53,25 +43,35 @@ def currencies(bot, update):
     bot.send_message(update.message.chat_id, message)
 
 
-def handle_command(bot, update):
-    cmd = cmd_pattern.match(update.message.text) and cmd_pattern.match(update.message.text).group(1)
-    cmd_handler.handle(cmd, bot, update)
+def gas_prices(bot, update):
+    """
+    Get gas prices
+    """
+    prices = '\n'.join(get_gas_prices())
+    message = (f"{update.message.from_user.name}\n"
+               f"Бензин на заправках города:\n"
+               f"{prices}")
+    bot.send_message(update.message.chat_id, message, parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def main():
     token = os.getenv('GALERA_API_TOKEN')
     updater = Updater(token=token)
     dispatcher = updater.dispatcher
-    message_handler = MessageHandler(MentionFilter(BOT_NAME), callback=handle_command)
-    dispatcher.add_handler(message_handler)
+
+    help_cmd_handler = CommandHandler('help', help_)
+    ping_cmd_handler = CommandHandler('ping', pong)
+    currencies_cmd_handler = CommandHandler('баблишко', currencies)
+    gas_cmd_handler = CommandHandler('бенз', gas_prices)
+
+    dispatcher.add_handler(help_cmd_handler)
+    dispatcher.add_handler(ping_cmd_handler)
+    dispatcher.add_handler(currencies_cmd_handler)
+    dispatcher.add_handler(gas_cmd_handler)
+
     logger.info('Start bot.')
     updater.start_polling()
 
 
 if __name__ == '__main__':
-    cmd_handler = BotCommandHandler(default_handler)
-    cmd_handler.add_command('ping', pong)
-    cmd_handler.add_command('currencies', currencies)
-    cmd_handler.add_command('help', help)
-
     main()

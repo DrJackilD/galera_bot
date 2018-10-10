@@ -1,3 +1,9 @@
+import re
+
+
+CMD_PATTERN = re.compile('@[A-z0-9]+ (\w+)')
+
+
 class BotCommandHandler:
     default_handler = None
     commands = {}
