@@ -28,23 +28,13 @@ def get_banks_currency():
 
 
 def get_market_currencies():
-    target_currencies = [
-        ('USD', 'https://minfin.com.ua/currency/auction/usd/buy/dnepropetrovsk/?presort=&sort=time&order=desc'),
-        ('EUR', 'https://minfin.com.ua/currency/auction/eur/buy/dnepropetrovsk/?presort=&sort=time&order=desc'),
-        ('Деревянный', 'https://minfin.com.ua/currency/auction/rub/buy/dnepropetrovsk/?presort=&sort=time&order=desc')
-    ]
-    currencies = []
-
-    for (title, url) in target_currencies:
-        r = requests.get(url)
-        tree = document_fromstring(r.text)
-        curr = ' / '.join(
-            map(str.strip,
-                tree.xpath('//div [@class="au-mid-buysell"][small]/text()[normalize-space()]'))
-        )
-        result = f'{title}: {curr}'
-        currencies.append(result)
-    return currencies
+    currency_map = {
+        'Dollar': 'USD',
+        'Euro': 'EUR',
+        'Rub': 'Деревянный',
+    }
+    rates = requests.get('http://vkurse.dp.ua/course.json').json()
+    return [f"{currency_map[name]}: {values['buy']} грн / {values['sale']} грн" for (name, values) in rates.items()]
 
 
 def get_nbu_currencies():
