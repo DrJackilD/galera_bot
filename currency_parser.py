@@ -98,7 +98,7 @@ def get_nbu_currencies():
         ("ЕВРО", "EUR"),
         ("РУБЛЬ", "Деревянный")
     ]
-    rates = CACHE.get('get_monobank_currencies')
+    rates = CACHE.get('get_nbu_currencies')
     if not rates:
         rates = []
         r = requests.get(url)
