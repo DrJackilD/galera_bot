@@ -54,7 +54,7 @@ class BaseCurrencySource:
             self.cache.set(self.cache_key, rates)
         return rates
 
-    def __repr__(self):
+    def __str__(self):
         return f"Курсы {self.cache_key}:\n{self.get_rates()}"
 
 
@@ -86,7 +86,7 @@ class UkrainianBanksSource(BaseCurrencySource):
     def cache_key(self):
         return "get_banks_currency"
 
-    def __repr__(self):
+    def __str__(self):
         formatted = "\n".join(self.get_rates())
         return f"Курсы в банках города:\n{formatted}\n"
 
@@ -107,7 +107,7 @@ class MarketSource(BaseCurrencySource):
                  rates.items()]
         return rates
 
-    def __repr__(self):
+    def __str__(self):
         formatted = "\n".join(self.get_rates())
         return f"Курсы у независимых продавцов:\n{formatted}\n"
 
@@ -133,7 +133,7 @@ class MonoBankSource(BaseCurrencySource):
             for exchange_rate in rates]
         return rates
 
-    def __repr__(self):
+    def __str__(self):
         formatted = "\n".join(self.get_rates())
         return f"Курсы у Моно банк:\n{formatted}\n"
 
@@ -164,7 +164,7 @@ class NBUSource(BaseCurrencySource):
             rates.append(result)
         return rates
 
-    def __repr__(self):
+    def __str__(self):
         formatted = "\n".join(self.get_rates())
         return f"Курсы НБУ:\n{formatted}\n"
 
