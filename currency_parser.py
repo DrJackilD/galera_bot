@@ -29,18 +29,43 @@ class Cache:
         self.CACHED_RESPONSES[key] = CachedResult(current_time, data)
 
 
-CACHE = Cache()
+class BaseCurrencySource:
+    def __init__(self, cache=None):
+        self._cache = cache
+
+    @property
+    def cache_key(self):
+        raise NotImplementedError
+
+    def request_data(self):
+        raise NotImplementedError
+
+    @property
+    def cache(self):
+        if self._cache:
+            return self._cache
+        self._cache = Cache()
+        return self.cache
+
+    def get_rates(self):
+        rates = self.cache.get(self.cache_key)
+        if not rates:
+            rates = self.request_data()
+            self.cache.set(self.cache_key, rates)
+        return rates
+
+    def __str__(self):
+        return f"Курсы {self.cache_key}:\n{self.get_rates()}"
 
 
-def get_banks_currency():
-    url = 'https://minfin.com.ua/currency/banks/dnepropetrovsk/'
-    target_currencies = [
-        ("ДОЛЛАР", "USD"),
-        ("ЕВРО", "EUR"),
-        ("РУБЛЬ", "Деревянный")
-    ]
-    rates = CACHE.get('get_banks_currency')
-    if not rates:
+class UkrainianBanksSource(BaseCurrencySource):
+    def request_data(self):
+        url = 'https://minfin.com.ua/currency/banks/dnepropetrovsk/'
+        target_currencies = [
+            ("ДОЛЛАР", "USD"),
+            ("ЕВРО", "EUR"),
+            ("РУБЛЬ", "Деревянный")
+        ]
         r = requests.get(url)
         tree = document_fromstring(r.text)
 
@@ -55,51 +80,77 @@ def get_banks_currency():
             )
             result = f'{title}: {curr}'
             rates.append(result)
-            CACHE.set('get_banks_currency', rates)
-    return rates
+        return rates
+
+    @property
+    def cache_key(self):
+        return "get_banks_currency"
+
+    def __str__(self):
+        formatted = "\n".join(self.get_rates())
+        return f"Курсы в банках города:\n{formatted}\n"
 
 
-def get_market_currencies():
-    currency_map = {
-        'Dollar': 'USD',
-        'Euro': 'EUR',
-        'Rub': 'Деревянный',
-    }
-    rates = CACHE.get('get_market_currencies')
-    if not rates:
+class MarketSource(BaseCurrencySource):
+    @property
+    def cache_key(self):
+        return "get_market_currencies"
+
+    def request_data(self):
+        currency_map = {
+            'Dollar': 'USD',
+            'Euro': 'EUR',
+            'Rub': 'Деревянный',
+        }
         rates = requests.get('http://vkurse.dp.ua/course.json').json()
-        rates = [f"{currency_map[name]}: {values['buy']} грн / {values['sale']} грн" for (name, values) in rates.items()]
-        CACHE.set('get_market_currencies', rates)
-    return rates
+        rates = [f"{currency_map[name]}: {values['buy']} грн / {values['sale']} грн" for (name, values) in
+                 rates.items()]
+        return rates
+
+    def __str__(self):
+        formatted = "\n".join(self.get_rates())
+        return f"Курсы у независимых продавцов:\n{formatted}\n"
 
 
-def get_monobank_currencies():
-    UAH_CODE = 980
-    currency_map = {
-        840: 'USD',
-        978: 'EUR',
-        643: 'Деревянный',
-    }
-    rates = CACHE.get('get_monobank_currencies')
-    if not rates:
+class MonoBankSource(BaseCurrencySource):
+
+    @property
+    def cache_key(self):
+        return "get_monobank_currencies"
+
+    def request_data(self):
+        UAH_CODE = 980
+        currency_map = {
+            840: 'USD',
+            978: 'EUR',
+            643: 'Деревянный',
+        }
         rates = requests.get('https://api.monobank.ua/bank/currency').json()
-        rates = filter(lambda x: x['currencyCodeA'] in currency_map.keys() and x['currencyCodeB'] == UAH_CODE, rates)
-        rates = [f"{currency_map[exchange_rate['currencyCodeA']]}: {exchange_rate['rateBuy']} грн / {exchange_rate['rateSell']} грн"
-                for exchange_rate in rates]
-        CACHE.set('get_monobank_currencies', rates)
+        rates = filter(lambda x: x['currencyCodeA'] in currency_map.keys() and x['currencyCodeB'] == UAH_CODE,
+                       rates)
+        rates = [
+            f"{currency_map[exchange_rate['currencyCodeA']]}: {exchange_rate['rateBuy']} грн / {exchange_rate['rateSell']} грн"
+            for exchange_rate in rates]
+        return rates
 
-    return rates
+    def __str__(self):
+        formatted = "\n".join(self.get_rates())
+        return f"Курсы у Моно банк:\n{formatted}\n"
 
 
-def get_nbu_currencies():
-    url = 'https://minfin.com.ua/currency/nbu/'
-    target_currencies = [
-        ("ДОЛЛАР", "USD"),
-        ("ЕВРО", "EUR"),
-        ("РУБЛЬ", "Деревянный")
-    ]
-    rates = CACHE.get('get_nbu_currencies')
-    if not rates:
+class NBUSource(BaseCurrencySource):
+
+    @property
+    def cache_key(self):
+        return "get_nbu_currencies"
+
+    def request_data(self):
+        url = 'https://minfin.com.ua/currency/nbu/'
+        target_currencies = [
+            ("ДОЛЛАР", "USD"),
+            ("ЕВРО", "EUR"),
+            ("РУБЛЬ", "Деревянный")
+        ]
         rates = []
         r = requests.get(url)
         tree = document_fromstring(r.text)
@@ -111,6 +162,21 @@ def get_nbu_currencies():
             )
             result = f'{title}: {curr}'
             rates.append(result)
+        return rates
 
-        CACHE.set('get_nbu_currencies', rates)
-    return rates
+    def __str__(self):
+        formatted = "\n".join(self.get_rates())
+        return f"Курсы НБУ:\n{formatted}\n"
+
+
+class SourceManager:
+    def __init__(self):
+        cache = Cache()
+        self.sources = [cls(cache) for cls in BaseCurrencySource.__subclasses__()]
+
+    def get_output(self):
+        output = [str(source) for source in self.sources]
+        return "\n".join(output)
+
+
+manager = SourceManager()
