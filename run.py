@@ -4,7 +4,7 @@ import os
 import telegram
 from telegram.ext import Updater, CommandHandler
 
-from currency_parser import get_banks_currency, get_market_currencies, get_nbu_currencies, get_monobank_currencies
+from currency_parser import manager as currency_manager
 from gas_parser import get_gas_prices
 
 logging.basicConfig(format='%(asctime)s %(name)s [%(levelname)s]: %(message)s', level=logging.INFO)
@@ -33,15 +33,8 @@ def currencies(bot, update):
     """
     Get today's currencies
     """
-    banks = '\n'.join(get_banks_currency())
-    market = '\n'.join(get_market_currencies())
-    nbu = '\n'.join(get_nbu_currencies())
-    mono = '\n'.join(get_monobank_currencies())
     message = (f"{update.message.from_user.name}\n"
-               f"Курсы в банках города:\n{banks}\n\n"
-               f"Курсы у Моно банк:\n{mono}\n\n"
-               f"Курсы у независимых продавцов:\n{market}\n\n"
-               f"Курсы НБУ:\n{nbu}")
+               f"{currency_manager.get_output()}")
     bot.send_message(update.message.chat_id, message)
 
 
