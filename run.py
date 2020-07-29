@@ -20,6 +20,7 @@ def help_(bot, update):
     message = ('/баблишко - курсы валют\n'
                '/бенз - цены на бензин\n'
                '/ping - пинг\n'
+               '/биток vin or number - проверить биток\n'
                '/help - показать помощь')
     bot.send_message(update.message.chat_id, f'{update.message.from_user.name}\n{message}')
 
