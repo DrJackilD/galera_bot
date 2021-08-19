@@ -3,7 +3,7 @@ import requests
 
 
 def get_gas_prices():
-    url = 'https://index.minfin.com.ua/markets/fuel/reg/Днепропетровская'
+    url = 'https://index.minfin.com.ua/markets/fuel/reg/kievskaya'
 
     target_stations = ['Авиас', 'Укрнафта', 'ОККО', 'WOG', 'Glusco', 'SKY', 'БРСМ-Нафта']
     excluded_gas_prices = ['А\xa092']
