@@ -126,15 +126,16 @@ class MonoBankSource(BaseCurrencySource):
             985: 'PLN',
         }
         rates = requests.get('https://api.monobank.ua/bank/currency')
-        if rates.status_code == 429:
+        try:
+            rates = rates.json()
+            rates = filter(lambda x: x['currencyCodeA'] in currency_map.keys() and x['currencyCodeB'] == UAH_CODE,
+                           rates)
+            rates = [
+                f"{currency_map[exchange_rate['currencyCodeA']]}: {exchange_rate['rateBuy']} грн / {exchange_rate['rateSell']} грн"
+                for exchange_rate in rates]
+            return rates
+        except KeyError:
             return ["Слишком много запросов"]
-        rates = rates.json()
-        rates = filter(lambda x: x['currencyCodeA'] in currency_map.keys() and x['currencyCodeB'] == UAH_CODE,
-                       rates)
-        rates = [
-            f"{currency_map[exchange_rate['currencyCodeA']]}: {exchange_rate['rateBuy']} грн / {exchange_rate['rateSell']} грн"
-            for exchange_rate in rates]
-        return rates
 
     def __str__(self):
         formatted = "\n".join(self.get_rates())
