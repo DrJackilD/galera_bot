@@ -1,0 +1,4 @@
+Inject==4.3.1
+lxml==4.9.1
+python-telegram-bot<11
+requests==2.28.1

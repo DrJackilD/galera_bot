@@ -64,7 +64,7 @@ class UkrainianBanksSource(BaseCurrencySource):
         target_currencies = [
             ("ДОЛЛАР", "USD"),
             ("ЕВРО", "EUR"),
-            ("РУБЛЬ", "Деревянный")
+            ("ПОЛЬСКИЙ ЗЛОТЫЙ", "PLN")
         ]
         r = requests.get(url)
         tree = document_fromstring(r.text)
@@ -100,7 +100,7 @@ class MarketSource(BaseCurrencySource):
         currency_map = {
             'Dollar': 'USD',
             'Euro': 'EUR',
-            'Rub': 'Деревянный',
+            'Pln': "PLN",
         }
         rates = requests.get('http://vkurse.dp.ua/course.json').json()
         rates = [f"{currency_map[name]}: {values['buy']} грн / {values['sale']} грн" for (name, values) in
@@ -123,9 +123,12 @@ class MonoBankSource(BaseCurrencySource):
         currency_map = {
             840: 'USD',
             978: 'EUR',
-            643: 'Деревянный',
+            985: 'PLN',
         }
-        rates = requests.get('https://api.monobank.ua/bank/currency').json()
+        rates = requests.get('https://api.monobank.ua/bank/currency')
+        if rates.status_code == 429:
+            return ["Слишком много запросов"]
+        rates = rates.json()
         rates = filter(lambda x: x['currencyCodeA'] in currency_map.keys() and x['currencyCodeB'] == UAH_CODE,
                        rates)
         rates = [
@@ -147,10 +150,10 @@ class NBUSource(BaseCurrencySource):
     def request_data(self):
         url = 'https://minfin.com.ua/currency/nbu/'
         target_currencies = [
-            ("ДОЛЛАР", "USD"),
-            ("ЕВРО", "EUR"),
-            ("РУБЛЬ", "Деревянный")
-        ]
+            ("Доллар США", "USD"),
+            ("Евро", "EUR"),
+            ("Польский злотый", "PLN")
+    ]
         rates = []
         r = requests.get(url)
         tree = document_fromstring(r.text)
@@ -158,7 +161,7 @@ class NBUSource(BaseCurrencySource):
         for (el_name, title) in target_currencies:
             curr = ''.join(
                 map(str.strip,
-                    tree.xpath(f'//a [text()="{el_name}"]/../../td[@data-title="Курс НБУ"]/text()[normalize-space()]'))
+                    tree.xpath(f'//h1[text()="Курс валют НБУ"]/../../following-sibling::div/table//td[preceding-sibling::td[text()="{el_name}"]]//text()'))
             )
             result = f'{title}: {curr}'
             rates.append(result)
